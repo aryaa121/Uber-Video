@@ -1,22 +1,26 @@
-# 🚗 Uber Backend API Documentation
+🚗 Uber Clone – Complete Backend API Documentation
 
-This backend provides authentication, user management, captain management, maps services, and ride operations.
+This backend powers a real-time ride-booking system similar to Uber, supporting authentication, ride lifecycle management, geo-spatial captain discovery, real-time communication, and secure session handling.
 
----
+🌐 Base URL
+http://localhost:4000
+🔐 Authentication
 
-# 👤 User APIs
+All protected routes require:
 
----
+Authorization: Bearer <JWT_TOKEN>
 
-## 🔹 POST `/users/register`
+JWT Expiry: 24 hours
+Logout Mechanism: Token Blacklisting
 
-### Description
+👤 USER APIs
+🔹 1. Register User
+POST /users/register
+Description:
 
-Registers a new user.
+Creates a new user account.
 
-### Request Body
-
-```json
+Request Body:
 {
   "fullname": {
     "firstname": "Arya",
@@ -25,74 +29,50 @@ Registers a new user.
   "email": "arya@test.com",
   "password": "123456"
 }
-```
-
-### Response
-
-```json
+Success Response:
 {
   "token": "JWT_TOKEN",
-  "user": { ... }
+  "user": {
+    "_id": "user_id",
+    "fullname": {
+      "firstname": "Arya",
+      "lastname": "Stark"
+    },
+    "email": "arya@test.com"
+  }
 }
-```
+Validations:
 
----
+Email must be unique
 
-## 🔹 POST `/users/login`
+Password minimum length enforced
 
-### Description
+🔹 2. Login User
+POST /users/login
+Description:
 
-Authenticates a user and returns a JWT token.
+Authenticates user and returns JWT token.
 
-### Request Body
+🔹 3. Get User Profile
+GET /users/profile
 
-```json
-{
-  "email": "arya@test.com",
-  "password": "123456"
-}
-```
+🔒 Protected Route
 
-### Response
+Returns logged-in user details.
 
-```json
-{
-  "token": "JWT_TOKEN",
-  "user": { ... }
-}
-```
+🔹 4. Logout User
+GET /users/logout
 
----
+🔒 Protected Route
 
-## 🔹 GET `/users/profile`
+Adds token to blacklist
 
-### Description
+Prevents reuse of token
 
-Returns logged-in user profile.
-
-### Authentication
-
-Bearer Token required.
-
----
-
-## 🔹 GET `/users/logout`
-
-### Description
-
-Logs out user and clears token.
-
----
-
-# 🚖 Captain APIs
-
----
-
-## 🔹 POST `/captains/register`
-
-### Request Body
-
-```json
+🚖 CAPTAIN APIs
+🔹 1. Register Captain
+POST /captains/register
+Request Body:
 {
   "fullname": {
     "firstname": "John",
@@ -107,122 +87,240 @@ Logs out user and clears token.
     "vehicleType": "car"
   }
 }
-```
+Additional Fields Stored:
 
----
+location (GeoJSON format)
 
-## 🔹 POST `/captains/login`
+status (active/inactive)
 
-Login captain and receive JWT.
+🔹 2. Login Captain
+POST /captains/login
 
----
+Returns JWT token.
 
-## 🔹 GET `/captains/profile`
+🔹 3. Get Captain Profile
+GET /captains/profile
 
-Returns captain profile (JWT required).
+🔒 Protected
 
----
+🔹 4. Logout Captain
+GET /captains/logout
 
-## 🔹 GET `/captains/logout`
+🔒 Protected
+Token added to blacklist.
 
-Logs out captain.
+🗺 MAP SERVICES APIs
 
----
+Integrated with Google Maps API.
 
-# 🗺 Maps APIs
-
----
-
-## 🔹 GET `/maps/get-coordinates`
-
-```
-/maps/get-coordinates?address=Location
-```
-
-Returns latitude & longitude.
-
----
-
-## 🔹 GET `/maps/get-distance-time`
-
-```
-/maps/get-distance-time?origin=A&destination=B
-```
-
-Returns travel distance & duration.
-
----
-
-## 🔹 GET `/maps/get-suggestions`
-
-```
-/maps/get-suggestions?input=Address
-```
+🔹 1. Get Coordinates
+GET /maps/get-coordinates?address=Location
+Response:
+{
+  "latitude": 28.6139,
+  "longitude": 77.2090
+}
+🔹 2. Get Distance & Duration
+GET /maps/get-distance-time?origin=A&destination=B
+Response:
+{
+  "distance": "12 km",
+  "duration": "25 mins"
+}
+🔹 3. Get Address Suggestions
+GET /maps/get-suggestions?input=Address
 
 Returns autocomplete suggestions.
 
----
+🚕 RIDE APIs
+🔹 1. Create Ride
+POST /rides/create
 
-# 🚕 Ride APIs
+🔒 Protected (User)
 
----
-
-## 🔹 POST `/rides/create`
-
-Creates a ride.
-
-### Body
-
-```json
+Request Body:
 {
   "pickup": "Location A",
   "destination": "Location B",
   "vehicleType": "car"
 }
-```
+Internal Flow:
 
----
+Convert pickup/destination → coordinates
 
-## 🔹 GET `/rides/get-fare`
+Calculate fare
 
-```
-/rides/get-fare?pickup=A&destination=B
-```
+Create ride (status: pending)
 
-Returns fare estimate.
+Find captains in 2km radius
 
----
+Emit real-time notification
 
-# 🔐 Authentication
+🔹 2. Get Fare Estimate
+GET /rides/get-fare?pickup=A&destination=B
 
-Protected routes require:
+Returns:
 
-```
-Authorization: Bearer <JWT_TOKEN>
-```
+{
+  "vehicleType": "car",
+  "fare": 250
+}
+🔹 3. Accept Ride (Captain)
+POST /rides/accept
 
----
+🔒 Protected (Captain)
 
-# ⚙️ Tech Stack
+Updates ride status → accepted
 
-* Node.js
-* Express.js
-* MongoDB
-* JWT Authentication
-* Google Maps API
+🔹 4. Start Ride
+POST /rides/start
 
----
+🔒 Protected
 
-# ✅ Features
+Validates OTP before changing status → ongoing
 
-✔ User & Captain authentication
-✔ Ride creation & fare estimation
-✔ Map location services
-✔ JWT security
-✔ MongoDB persistence
+🔹 5. End Ride
+POST /rides/end
 
----
+🔒 Protected
 
-# 🚀 Backend Ready
+Updates ride status → completed
 
-This backend supports a ride-booking workflow similar to Uber with modular architecture and secure authentication.
+🔔 Real-Time Socket Events
+
+Using Socket.IO:
+
+User Events:
+
+join
+
+ride-confirmed
+
+ride-started
+
+ride-ended
+
+Captain Events:
+
+join
+
+new-ride
+
+location-update
+
+📍 Geo-Spatial Implementation
+
+Captain location stored as:
+
+{
+  "type": "Point",
+  "coordinates": [longitude, latitude]
+}
+
+Indexed using:
+
+2dsphere index
+
+Used for:
+
+$geoWithin
+
+$centerSphere
+
+2km radius search
+
+🧱 Database Collections
+users
+
+fullname
+
+email
+
+password
+
+socketId
+
+captains
+
+fullname
+
+email
+
+password
+
+vehicle
+
+location
+
+socketId
+
+rides
+
+user (ref)
+
+captain (ref)
+
+pickup
+
+destination
+
+fare
+
+otp
+
+status
+
+timestamps
+
+blackListTokens
+
+token
+
+createdAt
+
+🔐 Security Features
+
+✔ JWT Authentication
+✔ Password hashing (bcrypt)
+✔ Token Blacklisting
+✔ OTP Ride Verification
+✔ Protected Middleware Routes
+✔ Request Validation
+✔ Geo-index optimization
+
+🚀 Ride Lifecycle
+Pending
+   ↓
+Accepted
+   ↓
+Ongoing
+   ↓
+Completed
+⚙️ Architecture Pattern
+Routes → Controllers → Services → Models
+
+Clean MVC separation with business logic abstraction.
+
+📈 Scalability Enhancements (Future Improvements)
+
+Redis for Socket scaling
+
+Rate limiting
+
+Surge pricing logic
+
+Payment gateway integration
+
+Microservices architecture
+
+Docker deployment
+
+🏆 Backend Status
+
+✅ Production-style structure
+✅ Secure authentication
+✅ Real-time event system
+✅ Geo-spatial captain matching
+✅ Modular architecture
+
+Arya 🔥
