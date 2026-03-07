@@ -1,26 +1,12 @@
-🚗 Uber Clone – Complete Backend API Documentation
+🚗 Uber Backend API Documentation
+This backend provides authentication, user management, captain management, maps services, and ride operations.
 
-This backend powers a real-time ride-booking system similar to Uber, supporting authentication, ride lifecycle management, geo-spatial captain discovery, real-time communication, and secure session handling.
+👤 User APIs
+🔹 POST /users/register
+Description
+Registers a new user.
 
-🌐 Base URL
-http://localhost:4000
-🔐 Authentication
-
-All protected routes require:
-
-Authorization: Bearer <JWT_TOKEN>
-
-JWT Expiry: 24 hours
-Logout Mechanism: Token Blacklisting
-
-👤 USER APIs
-🔹 1. Register User
-POST /users/register
-Description:
-
-Creates a new user account.
-
-Request Body:
+Request Body
 {
   "fullname": {
     "firstname": "Arya",
@@ -29,50 +15,39 @@ Request Body:
   "email": "arya@test.com",
   "password": "123456"
 }
-Success Response:
+Response
 {
   "token": "JWT_TOKEN",
-  "user": {
-    "_id": "user_id",
-    "fullname": {
-      "firstname": "Arya",
-      "lastname": "Stark"
-    },
-    "email": "arya@test.com"
-  }
+  "user": { ... }
 }
-Validations:
+🔹 POST /users/login
+Description
+Authenticates a user and returns a JWT token.
 
-Email must be unique
+Request Body
+{
+  "email": "arya@test.com",
+  "password": "123456"
+}
+Response
+{
+  "token": "JWT_TOKEN",
+  "user": { ... }
+}
+🔹 GET /users/profile
+Description
+Returns logged-in user profile.
 
-Password minimum length enforced
+Authentication
+Bearer Token required.
 
-🔹 2. Login User
-POST /users/login
-Description:
+🔹 GET /users/logout
+Description
+Logs out user and clears token.
 
-Authenticates user and returns JWT token.
-
-🔹 3. Get User Profile
-GET /users/profile
-
-🔒 Protected Route
-
-Returns logged-in user details.
-
-🔹 4. Logout User
-GET /users/logout
-
-🔒 Protected Route
-
-Adds token to blacklist
-
-Prevents reuse of token
-
-🚖 CAPTAIN APIs
-🔹 1. Register Captain
-POST /captains/register
-Request Body:
+🚖 Captain APIs
+🔹 POST /captains/register
+Request Body
 {
   "fullname": {
     "firstname": "John",
@@ -87,230 +62,54 @@ Request Body:
     "vehicleType": "car"
   }
 }
-Additional Fields Stored:
+🔹 POST /captains/login
+Login captain and receive JWT.
 
-location (GeoJSON format)
+🔹 GET /captains/profile
+Returns captain profile (JWT required).
 
-status (active/inactive)
+🔹 GET /captains/logout
+Logs out captain.
 
-🔹 2. Login Captain
-POST /captains/login
+🗺 Maps APIs
+🔹 GET /maps/get-coordinates
+/maps/get-coordinates?address=Location
+Returns latitude & longitude.
 
-Returns JWT token.
+🔹 GET /maps/get-distance-time
+/maps/get-distance-time?origin=A&destination=B
+Returns travel distance & duration.
 
-🔹 3. Get Captain Profile
-GET /captains/profile
-
-🔒 Protected
-
-🔹 4. Logout Captain
-GET /captains/logout
-
-🔒 Protected
-Token added to blacklist.
-
-🗺 MAP SERVICES APIs
-
-Integrated with Google Maps API.
-
-🔹 1. Get Coordinates
-GET /maps/get-coordinates?address=Location
-Response:
-{
-  "latitude": 28.6139,
-  "longitude": 77.2090
-}
-🔹 2. Get Distance & Duration
-GET /maps/get-distance-time?origin=A&destination=B
-Response:
-{
-  "distance": "12 km",
-  "duration": "25 mins"
-}
-🔹 3. Get Address Suggestions
-GET /maps/get-suggestions?input=Address
-
+🔹 GET /maps/get-suggestions
+/maps/get-suggestions?input=Address
 Returns autocomplete suggestions.
 
-🚕 RIDE APIs
-🔹 1. Create Ride
-POST /rides/create
+🚕 Ride APIs
+🔹 POST /rides/create
+Creates a ride.
 
-🔒 Protected (User)
-
-Request Body:
+Body
 {
   "pickup": "Location A",
   "destination": "Location B",
   "vehicleType": "car"
 }
-Internal Flow:
-
-Convert pickup/destination → coordinates
-
-Calculate fare
-
-Create ride (status: pending)
-
-Find captains in 2km radius
-
-Emit real-time notification
-
-🔹 2. Get Fare Estimate
-GET /rides/get-fare?pickup=A&destination=B
-
-Returns:
-
-{
-  "vehicleType": "car",
-  "fare": 250
-}
-🔹 3. Accept Ride (Captain)
-POST /rides/accept
-
-🔒 Protected (Captain)
-
-Updates ride status → accepted
-
-🔹 4. Start Ride
-POST /rides/start
-
-🔒 Protected
-
-Validates OTP before changing status → ongoing
-
-🔹 5. End Ride
-POST /rides/end
-
-🔒 Protected
-
-Updates ride status → completed
-
-🔔 Real-Time Socket Events
-
-Using Socket.IO:
-
-User Events:
-
-join
-
-ride-confirmed
-
-ride-started
-
-ride-ended
-
-Captain Events:
-
-join
-
-new-ride
-
-location-update
-
-📍 Geo-Spatial Implementation
-
-Captain location stored as:
-
-{
-  "type": "Point",
-  "coordinates": [longitude, latitude]
-}
-
-Indexed using:
-
-2dsphere index
-
-Used for:
-
-$geoWithin
-
-$centerSphere
-
-2km radius search
-
-🧱 Database Collections
-users
-
-fullname
-
-email
-
-password
-
-socketId
-
-captains
-
-fullname
-
-email
-
-password
-
-vehicle
-
-location
-
-socketId
-
-rides
-
-user (ref)
-
-captain (ref)
-
-pickup
-
-destination
-
-fare
-
-otp
-
-status
-
-timestamps
-
-blackListTokens
-
-token
-
-createdAt
-
-🔐 Security Features
-
-✔ JWT Authentication
-✔ Password hashing (bcrypt)
-✔ Token Blacklisting
-✔ OTP Ride Verification
-✔ Protected Middleware Routes
-✔ Request Validation
-✔ Geo-index optimization
-
-🚀 Ride Lifecycle
-Pending
-   ↓
-Accepted
-   ↓
-Ongoing
-   ↓
-Completed
-⚙️ Architecture Pattern
-Routes → Controllers → Services → Models
-
-Clean MVC separation with business logic abstraction.
-
-📈 Scalability Enhancements (Future Improvements)
-
-Redis for Socket scaling
-
-Rate limiting
-
-Surge pricing logic
-
-Payment gateway integration
-
-Microservices architecture
-
-Docker deployment
+🔹 GET /rides/get-fare
+/rides/get-fare?pickup=A&destination=B
+Returns fare estimate.
+
+🔐 Authentication
+Protected routes require:
+
+Authorization: Bearer <JWT_TOKEN>
+⚙️ Tech Stack
+Node.js
+Express.js
+MongoDB
+JWT Authentication
+Google Maps API
+✅ Features
+✔ User & Captain authentication ✔ Ride creation & fare estimation ✔ Map location services ✔ JWT security ✔ MongoDB persistence
+
+🚀 Backend Ready
+This backend supports a ride-booking workflow similar to Uber with modular architecture and secure authenticati
